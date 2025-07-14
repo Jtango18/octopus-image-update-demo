@@ -1,5 +1,50 @@
 # good-chat-app.yaml
 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: good-chat-nginx-deployment
+  labels:
+    app: good-chat
+spec:
+  replicas: 1 # You can adjust the number of replicas
+  selector:
+    matchLabels:
+      app: good-chat
+  template:
+    metadata:
+      labels:
+        app: good-chat
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.19 
+        ports:
+        - containerPort: 80 # Nginx default HTTP port inside the container
+        volumeMounts:
+        - name: nginx-config-volume
+          mountPath: /etc/nginx/conf.d/default.conf # Mount custom Nginx config
+          subPath: nginx.conf # Specify the key from the ConfigMap
+        - name: html-content-volume
+          mountPath: /usr/share/nginx/html/index.html # Mount custom index.html
+          subPath: index.html # Specify the key from the ConfigMap
+        readinessProbe: # Added readiness probe
+          httpGet:
+            path: / # Path to check
+            port: 80 # Port to check (container port)
+          initialDelaySeconds: 5 # Wait 5 seconds before first probe
+          periodSeconds: 5 # Check every 5 seconds
+          timeoutSeconds: 3 # Timeout after 3 seconds
+          failureThreshold: 3 # Mark as unready after 3 failed attempts
+      volumes:
+      - name: nginx-config-volume
+        configMap:
+          name: good-chat-nginx-config # Reference the ConfigMap for Nginx config
+      - name: html-content-volume
+        configMap:
+          name: good-chat-nginx-config # Reference the ConfigMap for HTML content
+
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -50,51 +95,6 @@ data:
     <body>
       <span>Good Chat!</span>
     </body></html>
-
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: good-chat-nginx-deployment
-  labels:
-    app: good-chat
-spec:
-  replicas: 1 # You can adjust the number of replicas
-  selector:
-    matchLabels:
-      app: good-chat
-  template:
-    metadata:
-      labels:
-        app: good-chat
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:1.19 
-        ports:
-        - containerPort: 80 # Nginx default HTTP port inside the container
-        volumeMounts:
-        - name: nginx-config-volume
-          mountPath: /etc/nginx/conf.d/default.conf # Mount custom Nginx config
-          subPath: nginx.conf # Specify the key from the ConfigMap
-        - name: html-content-volume
-          mountPath: /usr/share/nginx/html/index.html # Mount custom index.html
-          subPath: index.html # Specify the key from the ConfigMap
-        readinessProbe: # Added readiness probe
-          httpGet:
-            path: / # Path to check
-            port: 80 # Port to check (container port)
-          initialDelaySeconds: 5 # Wait 5 seconds before first probe
-          periodSeconds: 5 # Check every 5 seconds
-          timeoutSeconds: 3 # Timeout after 3 seconds
-          failureThreshold: 3 # Mark as unready after 3 failed attempts
-      volumes:
-      - name: nginx-config-volume
-        configMap:
-          name: good-chat-nginx-config # Reference the ConfigMap for Nginx config
-      - name: html-content-volume
-        configMap:
-          name: good-chat-nginx-config # Reference the ConfigMap for HTML content
 
 ---
 apiVersion: v1
