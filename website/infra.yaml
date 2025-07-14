@@ -80,6 +80,14 @@ spec:
         - name: html-content-volume
           mountPath: /usr/share/nginx/html/index.html # Mount custom index.html
           subPath: index.html # Specify the key from the ConfigMap
+        readinessProbe: # Added readiness probe
+          httpGet:
+            path: / # Path to check
+            port: 80 # Port to check (container port)
+          initialDelaySeconds: 5 # Wait 5 seconds before first probe
+          periodSeconds: 5 # Check every 5 seconds
+          timeoutSeconds: 3 # Timeout after 3 seconds
+          failureThreshold: 3 # Mark as unready after 3 failed attempts
       volumes:
       - name: nginx-config-volume
         configMap:
