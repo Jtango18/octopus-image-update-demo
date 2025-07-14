@@ -110,4 +110,5 @@ spec:
     - protocol: TCP
       port: 4321 # The port the service will be exposed on
       targetPort: 80 # The port the container is listening on (Nginx's default)
-  type: LoadBalancer # Remains LoadBalancer for public access
+      nodePort: 30432 # Optional: You can specify a nodePort in the 30000-32767 range
+  type: NodePort # Changed from LoadBalancer to NodePort for Minikube
