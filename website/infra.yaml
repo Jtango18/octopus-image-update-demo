@@ -1,0 +1,105 @@
+# good-chat-app.yaml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: good-chat-nginx-config
+  labels:
+    app: good-chat
+data:
+  # Nginx configuration to serve index.html
+  nginx.conf: |
+    server {
+        listen 80; # Nginx inside the container will still listen on 80
+        server_name localhost;
+
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+            try_files $uri $uri/ =404;
+        }
+    }
+  # Your custom HTML content for index.html
+  index.html: |
+    <html>
+    <head>
+    <title>Good Chat!</title>
+    <style>
+    body{
+      font-size: 15em;
+      display:flex;
+      flex-direction: column;
+      font-family: Helvetica, sans-serif;
+      justify-content: center;
+      align-items: center; /* Center content horizontally */
+      height: 100vh; /* Make body take full viewport height */
+      margin: 0; /* Remove default body margin */
+      background-color: #f0f0f0; /* Light background for contrast */
+    }
+
+    span{
+      text-align: center;
+      color: #333; /* Darker text color */
+      padding: 20px;
+      border-radius: 15px; /* Rounded corners for the text box */
+      background-color: #fff; /* White background for the text box */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    }
+    </style>
+    </head>
+    <body>
+      <span>Good Chat!</span>
+    </body></html>
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: good-chat-nginx-deployment
+  labels:
+    app: good-chat
+spec:
+  replicas: 1 # You can adjust the number of replicas
+  selector:
+    matchLabels:
+      app: good-chat
+  template:
+    metadata:
+      labels:
+        app: good-chat
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.18.0 
+        ports:
+        - containerPort: 80 # Nginx default HTTP port inside the container
+        volumeMounts:
+        - name: nginx-config-volume
+          mountPath: /etc/nginx/conf.d/default.conf # Mount custom Nginx config
+          subPath: nginx.conf # Specify the key from the ConfigMap
+        - name: html-content-volume
+          mountPath: /usr/share/nginx/html/index.html # Mount custom index.html
+          subPath: index.html # Specify the key from the ConfigMap
+      volumes:
+      - name: nginx-config-volume
+        configMap:
+          name: good-chat-nginx-config # Reference the ConfigMap for Nginx config
+      - name: html-content-volume
+        configMap:
+          name: good-chat-nginx-config # Reference the ConfigMap for HTML content
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: good-chat-nginx-service
+  labels:
+    app: good-chat
+spec:
+  selector:
+    app: good-chat
+  ports:
+    - protocol: TCP
+      port: 4321 # The port the service will be exposed on
+      targetPort: 80 # The port the container is listening on (Nginx's default)
+  type: LoadBalancer # Remains LoadBalancer for public access
