@@ -70,7 +70,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.18.0 
+        image: nginx:1.19 
         ports:
         - containerPort: 80 # Nginx default HTTP port inside the container
         volumeMounts:
